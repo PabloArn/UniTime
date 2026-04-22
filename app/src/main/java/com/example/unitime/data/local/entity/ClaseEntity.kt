@@ -22,18 +22,15 @@ data class ClaseEntity(
     @ColumnInfo(name = "salon")
     val salon: String = "",
 
-    // Hora en formato "HH:mm", ej: "14:30"
     @ColumnInfo(name = "hora_inicio")
     val horaInicio: String,
 
     @ColumnInfo(name = "hora_fin")
     val horaFin: String,
 
-    // Días separados por coma, ej: "LUNES,MIERCOLES,VIERNES"
     @ColumnInfo(name = "dias_de_la_semana")
     val diasDeLaSemana: String,
 
-    // Color ARGB como Int, ej: Color.Blue.toArgb()
     @ColumnInfo(name = "color")
     val color: Int = 0xFF6650A4.toInt()
 )

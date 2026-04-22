@@ -14,7 +14,6 @@ data class ProfesorEntity(
     @ColumnInfo(name = "nombre")
     val nombre: String,
 
-    // Validación de formato @ se hace en el ViewModel (CU-21 FA-01)
     @ColumnInfo(name = "correo")
     val correo: String = "",
 

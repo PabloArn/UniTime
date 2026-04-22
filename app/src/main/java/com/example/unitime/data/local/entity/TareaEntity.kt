@@ -30,11 +30,9 @@ data class TareaEntity(
     @ColumnInfo(name = "descripcion")
     val descripcion: String = "",
 
-    // Fecha como epoch en milisegundos para comparar fácilmente
     @ColumnInfo(name = "fecha_entrega")
     val fechaEntrega: Long,
 
-    // "ALTA", "MEDIA", "BAJA"
     @ColumnInfo(name = "prioridad")
     val prioridad: String = "MEDIA",
 
@@ -44,7 +42,6 @@ data class TareaEntity(
     @ColumnInfo(name = "clase_id")
     val claseId: Long? = null,
 
-    // UUID del Worker para cancelarlo en edición/eliminación
     @ColumnInfo(name = "worker_id")
     val workerId: String? = null
 )
