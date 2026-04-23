@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.unitime"
-    compileSdk = 36 // O el que estés usando (34 o 35 es más estable hoy en día)
+    compileSdk = 35 // O el que estés usando (34 o 35 es más estable hoy en día)
 
     defaultConfig {
         applicationId = "com.example.unitime"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -26,11 +26,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures {
-        compose = true
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }
 
