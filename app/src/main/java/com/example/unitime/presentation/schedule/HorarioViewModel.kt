@@ -14,13 +14,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ScheduleViewModel @Inject constructor(
+class HorarioViewModel @Inject constructor(
     private val repository: ClaseRepository,
     private val guardarClaseUseCase: GuardarClaseUseCase,
     private val validarEmpalmeUseCase: ValidarEmpalmeUseCase
 ) : ViewModel() {
 
-    // Lista reactiva de todas las clases
+    // Lista reactiva de todas las clases que se mostrarán en la UI
     val clases: StateFlow<List<ClaseEntity>> = repository
         .getAllClases()
         .stateIn(
@@ -29,13 +29,13 @@ class ScheduleViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    // Estado del resultado al guardar
-    var uiState: ScheduleUiState = ScheduleUiState.Idle
+    // Estado visual para saber si se guardó bien o hubo error
+    var estadoUi: HorarioUiState = HorarioUiState.Inactivo
         private set
 
     fun guardarClase(clase: ClaseEntity) {
         viewModelScope.launch {
-            // Validar empalme antes de guardar (CU-19)
+            // Separamos los días para poder validarlos uno por uno (CU-19)
             val dias = clase.diasDeLaSemana.split(",")
             val conflicto = validarEmpalmeUseCase(
                 diasNueva = dias,
@@ -44,24 +44,25 @@ class ScheduleViewModel @Inject constructor(
                 excludeId = clase.id
             )
 
-            uiState = if (conflicto != null) {
-                ScheduleUiState.Error(
-                    "Esta clase se empalma con: ${conflicto.nombre}"
-                )
+            estadoUi = if (conflicto != null) {
+                // Si hay empalme, bloqueamos el guardado y avisamos
+                HorarioUiState.Error("Esta clase choca con: ${conflicto.nombre}")
             } else {
+                // Si el horario está libre, insertamos en la base de datos
                 guardarClaseUseCase(clase)
-                ScheduleUiState.Success
+                HorarioUiState.Exito
             }
         }
     }
 
-    fun resetState() {
-        uiState = ScheduleUiState.Idle
+    fun reiniciarEstado() {
+        estadoUi = HorarioUiState.Inactivo
     }
 }
 
-sealed class ScheduleUiState {
-    object Idle : ScheduleUiState()
-    object Success : ScheduleUiState()
-    data class Error(val mensaje: String) : ScheduleUiState()
+// Representa los estados posibles al intentar guardar una materia
+sealed class HorarioUiState {
+    object Inactivo : HorarioUiState()
+    object Exito : HorarioUiState()
+    data class Error(val mensaje: String) : HorarioUiState()
 }
