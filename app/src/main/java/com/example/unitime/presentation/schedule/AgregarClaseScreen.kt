@@ -1,18 +1,21 @@
 package com.example.unitime.presentation.schedule
 
+import android.app.TimePickerDialog
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.unitime.data.local.entity.ClaseEntity
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,13 +36,32 @@ fun AgregarClaseScreen(
     var diasSeleccionados by remember { mutableStateOf(setOf<String>()) }
     val diasSemana = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
 
-    // Observamos los cambios del ViewModel para saber si redirigir o mostrar error
+    // --- LÓGICA DEL RELOJ NATIVO (CU-12) ---
+    val calendario = Calendar.getInstance()
+    val horaActual = calendario.get(Calendar.HOUR_OF_DAY)
+    val minutoActual = calendario.get(Calendar.MINUTE)
+
+    // Función reutilizable para abrir el reloj
+    fun mostrarReloj(alSeleccionar: (String) -> Unit) {
+        TimePickerDialog(
+            contexto,
+            { _, hora, minuto ->
+                // Formateamos la hora para asegurarnos de que SIEMPRE tenga el formato "HH:MM" (ej. 09:05)
+                val tiempoFormateado = String.format(Locale.getDefault(), "%02d:%02d", hora, minuto)
+                alSeleccionar(tiempoFormateado)
+            },
+            horaActual,
+            minutoActual,
+            true // true para formato de 24 horas
+        ).show()
+    }
+
     LaunchedEffect(estadoUi) {
         when (estadoUi) {
             is HorarioUiState.Exito -> {
                 Toast.makeText(contexto, "Clase guardada correctamente", Toast.LENGTH_SHORT).show()
                 viewModel.reiniciarEstado()
-                navController.popBackStack() // Regresamos al horario
+                navController.popBackStack()
             }
             is HorarioUiState.Error -> {
                 Toast.makeText(contexto, estadoUi.mensaje, Toast.LENGTH_LONG).show()
@@ -93,20 +115,35 @@ fun AgregarClaseScreen(
                 )
             }
 
+            // --- CAMPOS DE HORA ACTUALIZADOS PARA ABRIR EL RELOJ ---
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = horaInicio,
-                    onValueChange = { horaInicio = it },
-                    label = { Text("Hora Inicio (ej. 14:30)") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
+                    onValueChange = { },
+                    label = { Text("Hora Inicio") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { mostrarReloj { horaInicio = it } }, // Al hacer clic, abre el reloj
+                    enabled = false, // Lo deshabilitamos para que no puedan escribir a mano
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
                 OutlinedTextField(
                     value = horaFin,
-                    onValueChange = { horaFin = it },
-                    label = { Text("Hora Fin (ej. 16:00)") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
+                    onValueChange = { },
+                    label = { Text("Hora Fin") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { mostrarReloj { horaFin = it } }, // Al hacer clic, abre el reloj
+                    enabled = false,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
 
