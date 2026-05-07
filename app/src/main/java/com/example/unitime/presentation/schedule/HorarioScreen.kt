@@ -23,22 +23,21 @@ fun HorarioScreen(
     viewModel: HorarioViewModel = hiltViewModel()
 ) {
     val clases: List<ClaseEntity> by viewModel.clases.collectAsState(initial = emptyList())
-
-    // Variable para saber qué clase quiere borrar el usuario.
-    // Si es null, no mostramos el diálogo. Si tiene una clase, lanzamos la alerta.
     var claseParaBorrar by remember { mutableStateOf<ClaseEntity?>(null) }
 
-    // DIÁLOGO DE CONFIRMACIÓN (Cumpliendo el CU-07)
+    //Estado para controlar si el menú de agregar está abierto o cerrado
+    var mostrarMenuAgregar by remember { mutableStateOf(false) }
+
     claseParaBorrar?.let { clase ->
         AlertDialog(
-            onDismissRequest = { claseParaBorrar = null }, // Si toca fuera, cancelamos
+            onDismissRequest = { claseParaBorrar = null },
             title = { Text("Eliminar clase") },
             text = { Text("¿Estás seguro de eliminar '${clase.nombre}' y sus tareas vinculadas?") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         viewModel.eliminarClase(clase)
-                        claseParaBorrar = null // Cerramos el diálogo después de borrar
+                        claseParaBorrar = null
                     }
                 ) {
                     Text("Confirmar", color = MaterialTheme.colorScheme.error)
@@ -54,10 +53,36 @@ fun HorarioScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { navController.navigate(Rutas.AGREGAR_CLASE) }
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar clase")
+            // Envolvemos el botón en un Box para que el menú desplegable se ancle a él
+            Box {
+                FloatingActionButton(
+                    onClick = { mostrarMenuAgregar = true },
+                    containerColor = MaterialTheme.colorScheme.primary, // Color azul/principal del Figma
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Opciones de agregar")
+                }
+
+                // Menú desplegable con las dos opciones
+                DropdownMenu(
+                    expanded = mostrarMenuAgregar,
+                    onDismissRequest = { mostrarMenuAgregar = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("¡Nueva Tarea!") },
+                        onClick = {
+                            mostrarMenuAgregar = false
+                            navController.navigate(Rutas.AGREGAR_TAREA) // Navega a la pantalla que acabamos de crear
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("¡Nueva Materia!") },
+                        onClick = {
+                            mostrarMenuAgregar = false
+                            navController.navigate(Rutas.AGREGAR_CLASE)
+                        }
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -84,7 +109,6 @@ fun HorarioScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        // Usamos un Row para alinear el texto a la izquierda y el botón de borrar a la derecha
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -99,7 +123,6 @@ fun HorarioScreen(
                                 Text(text = "${clase.diasDeLaSemana} • ${clase.horaInicio} - ${clase.horaFin}")
                             }
 
-                            // Botón de eliminar con su icono rojo para alertar al estudiante
                             IconButton(onClick = { claseParaBorrar = clase }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,

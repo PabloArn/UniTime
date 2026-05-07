@@ -6,11 +6,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.unitime.presentation.schedule.HorarioScreen
 import com.example.unitime.presentation.schedule.AgregarClaseScreen
+import com.example.unitime.presentation.tasks.AgregarTareaScreen
 
 // Centralizamos las rutas en español para evitar errores de tipeo
 object Rutas {
     const val HORARIO = "horario"
     const val AGREGAR_CLASE = "agregar_clase"
+
+    const val AGREGAR_TAREA = "agregar_tarea"
 }
 
 @Composable
@@ -29,6 +32,10 @@ fun NavGraph() {
         // Pantalla del formulario para registrar una nueva materia
         composable(Rutas.AGREGAR_CLASE) {
             AgregarClaseScreen(navController = navController)
+        }
+
+        composable(Rutas.AGREGAR_TAREA) {
+            AgregarTareaScreen(navController = navController)
         }
     }
 }
