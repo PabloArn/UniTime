@@ -33,14 +33,12 @@ fun HorarioScreen(
     val clases by horarioViewModel.clases.collectAsState(initial = emptyList())
     val tareas by tareaViewModel.tareasPendientes.collectAsState(initial = emptyList())
 
-    // Variables para diálogos de eliminación
     var claseParaBorrar by remember { mutableStateOf<ClaseEntity?>(null) }
-    var tareaParaBorrar by remember { mutableStateOf<TareaEntity?>(null) } // NUEVO: Para el CU-16
-
+    var tareaParaBorrar by remember { mutableStateOf<TareaEntity?>(null) }
     var mostrarMenuAgregar by remember { mutableStateOf(false) }
 
-    // Días y Pestañas
-    val diasSemana = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
+    val diasSemana = listOf("Todos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado")
+
     val diaActual = remember {
         when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
             Calendar.MONDAY -> "Lunes"
@@ -54,37 +52,22 @@ fun HorarioScreen(
     }
 
     var diaSeleccionado by remember { mutableStateOf(diaActual) }
-    var tabSeleccionada by remember { mutableStateOf(0) }
-
-    // NUEVO: Variable para saber qué materia quiere filtrar el estudiante (CU-14)
-    // Si es null, significa que quiere ver "Todas" las materias.
+    var tabSeleccionada by remember { mutableStateOf(0) } // 0 = Clases, 1 = Tareas
     var filtroMateriaId by remember { mutableStateOf<Long?>(null) }
 
     // --- LÓGICA DE FILTROS ---
-    val clasesFiltradas = clases.filter { it.diasDeLaSemana.contains(diaSeleccionado) }
+    val clasesFiltradas = if (diaSeleccionado == "Todos") {
+        clases
+    } else {
+        clases.filter { it.diasDeLaSemana.contains(diaSeleccionado) }
+    }
 
+    // Las tareas ahora SOLO se filtran por materia, ignorando el día seleccionado
     val tareasFiltradas = tareas.filter { tarea ->
-        val cal = Calendar.getInstance().apply { timeInMillis = tarea.fechaEntrega }
-        val diaDeLaTarea = when (cal.get(Calendar.DAY_OF_WEEK)) {
-            Calendar.MONDAY -> "Lunes"
-            Calendar.TUESDAY -> "Martes"
-            Calendar.WEDNESDAY -> "Miércoles"
-            Calendar.THURSDAY -> "Jueves"
-            Calendar.FRIDAY -> "Viernes"
-            Calendar.SATURDAY -> "Sábado"
-            else -> "Domingo"
-        }
-
-        val coincideDia = diaDeLaTarea == diaSeleccionado
-        // Validamos si la tarea pertenece a la materia que seleccionó el usuario (CU-14)
-        val coincideMateria = filtroMateriaId == null || tarea.claseId == filtroMateriaId
-
-        coincideDia && coincideMateria
+        filtroMateriaId == null || tarea.claseId == filtroMateriaId
     }
 
     // --- DIÁLOGOS DE CONFIRMACIÓN ---
-
-    // Diálogo para borrar Clases
     claseParaBorrar?.let { clase ->
         AlertDialog(
             onDismissRequest = { claseParaBorrar = null },
@@ -99,7 +82,6 @@ fun HorarioScreen(
         )
     }
 
-    // NUEVO: Diálogo para borrar Tareas (CU-16)
     tareaParaBorrar?.let { tarea ->
         AlertDialog(
             onDismissRequest = { tareaParaBorrar = null },
@@ -136,25 +118,29 @@ fun HorarioScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            ScrollableTabRow(
-                selectedTabIndex = diasSemana.indexOf(diaSeleccionado),
-                edgePadding = 8.dp,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                diasSemana.forEachIndexed { index, dia ->
-                    Tab(selected = diaSeleccionado == dia, onClick = { diaSeleccionado = dia }, text = { Text(dia) })
-                }
-            }
-
+            // 1. PESTAÑAS PRINCIPALES HASTA ARRIBA
             TabRow(selectedTabIndex = tabSeleccionada) {
                 Tab(selected = tabSeleccionada == 0, onClick = { tabSeleccionada = 0 }, text = { Text("📚 Clases (${clasesFiltradas.size})") })
                 Tab(selected = tabSeleccionada == 1, onClick = { tabSeleccionada = 1 }, text = { Text("📝 Tareas (${tareasFiltradas.size})") })
             }
 
+            // 2. CONTENIDO DEPENDIENDO DE LA PESTAÑA
             if (tabSeleccionada == 0) {
                 // --- VISTA DE CLASES ---
+
+                // El selector de días SOLO aparece en la pestaña de Clases
+                ScrollableTabRow(
+                    selectedTabIndex = diasSemana.indexOf(diaSeleccionado),
+                    edgePadding = 8.dp,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    diasSemana.forEachIndexed { index, dia ->
+                        Tab(selected = diaSeleccionado == dia, onClick = { diaSeleccionado = dia }, text = { Text(dia) })
+                    }
+                }
+
                 if (clasesFiltradas.isEmpty()) {
-                    EstadoVacio("No tienes clases este día.")
+                    EstadoVacio(if (diaSeleccionado == "Todos") "Aún no tienes clases registradas." else "No tienes clases este día.")
                 } else {
                     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(clasesFiltradas) { clase ->
@@ -169,6 +155,10 @@ fun HorarioScreen(
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text("⏰ ${clase.horaInicio} - ${clase.horaFin}")
                                         Text("📍 Salón: ${clase.salon} | Edificio: ${clase.edificio}")
+
+                                        if (diaSeleccionado == "Todos") {
+                                            Text("📅 Días: ${clase.diasDeLaSemana}", color = MaterialTheme.colorScheme.secondary)
+                                        }
                                     }
                                     IconButton(onClick = { claseParaBorrar = clase }) {
                                         Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = MaterialTheme.colorScheme.error)
@@ -180,61 +170,62 @@ fun HorarioScreen(
                 }
             } else {
                 // --- VISTA DE TAREAS ---
-                Column {
-                    // NUEVO: Carrusel de filtros por materia (CU-14)
-                    // Solo lo mostramos si el estudiante tiene clases registradas
-                    if (clases.isNotEmpty()) {
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            item {
-                                FilterChip(
-                                    selected = filtroMateriaId == null,
-                                    onClick = { filtroMateriaId = null },
-                                    label = { Text("Todas") }
-                                )
-                            }
-                            items(clases) { clase ->
-                                FilterChip(
-                                    selected = filtroMateriaId == clase.id,
-                                    onClick = { filtroMateriaId = clase.id },
-                                    label = { Text(clase.nombre) }
-                                )
-                            }
+
+                // Las etiquetas de Materias SOLO aparecen en la pestaña de Tareas
+                if (clases.isNotEmpty()) {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = filtroMateriaId == null,
+                                onClick = { filtroMateriaId = null },
+                                label = { Text("Todas") }
+                            )
+                        }
+                        items(clases) { clase ->
+                            FilterChip(
+                                selected = filtroMateriaId == clase.id,
+                                onClick = { filtroMateriaId = clase.id },
+                                label = { Text(clase.nombre) }
+                            )
                         }
                     }
+                }
 
-                    if (tareasFiltradas.isEmpty()) {
-                        EstadoVacio(if (filtroMateriaId == null) "¡Día libre! No hay tareas urgentes para este día." else "No hay tareas pendientes para esta materia.")
-                    } else {
-                        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(tareasFiltradas) { tarea ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                if (tareasFiltradas.isEmpty()) {
+                    EstadoVacio(if (filtroMateriaId == null) "¡Día libre! No hay tareas urgentes." else "No hay tareas pendientes para esta materia.")
+                } else {
+                    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(tareasFiltradas) { tarea ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Checkbox(
-                                            checked = tarea.completada,
-                                            onCheckedChange = { estaCompletada -> tareaViewModel.alternarEstadoTarea(tarea, estaCompletada) }
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(tarea.titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                            if (tarea.descripcion.isNotBlank()) {
-                                                Text(tarea.descripcion, style = MaterialTheme.typography.bodySmall)
-                                            }
-                                            val formato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                                            Text("📅 Entrega: ${formato.format(tarea.fechaEntrega)}", color = MaterialTheme.colorScheme.primary)
+                                    Checkbox(
+                                        checked = tarea.completada,
+                                        onCheckedChange = { estaCompletada -> tareaViewModel.alternarEstadoTarea(tarea, estaCompletada) }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(tarea.titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        if (tarea.descripcion.isNotBlank()) {
+                                            Text(tarea.descripcion, style = MaterialTheme.typography.bodySmall)
                                         }
-                                        // NUEVO: Botón de eliminar tarea (CU-16)
-                                        IconButton(onClick = { tareaParaBorrar = tarea }) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Borrar Tarea", tint = MaterialTheme.colorScheme.error)
-                                        }
+
+                                        // Formato que te muestra qué día cae (ej. "Martes 12/05")
+                                        val formato = SimpleDateFormat("EEEE dd/MM", Locale("es", "ES"))
+                                        val fechaFormateada = formato.format(tarea.fechaEntrega).replaceFirstChar { it.uppercase() }
+
+                                        Text("📅 Entrega: $fechaFormateada", color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    IconButton(onClick = { tareaParaBorrar = tarea }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Borrar Tarea", tint = MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }
