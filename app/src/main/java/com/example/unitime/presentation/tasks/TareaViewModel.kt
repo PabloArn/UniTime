@@ -85,6 +85,17 @@ class TareaViewModel @Inject constructor(
         }
     }
 
+    // --- CU-16: Eliminar tarea ---
+    fun eliminarTarea(tarea: TareaEntity) {
+        viewModelScope.launch {
+            try {
+                tareaRepository.deleteTarea(tarea)
+            } catch (e: Exception) {
+                estadoUi = TareaUiState.Error("Error al eliminar la tarea")
+            }
+        }
+    }
+
     fun reiniciarEstado() {
         estadoUi = TareaUiState.Inactivo
     }
