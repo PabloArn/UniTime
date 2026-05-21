@@ -7,6 +7,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unitime.presentation.schedule.HorarioScreen
 import com.example.unitime.presentation.schedule.AgregarClaseScreen
 import com.example.unitime.presentation.tasks.AgregarTareaScreen
+import com.example.unitime.presentation.focus.EnfoqueScreen
+
 
 // Centralizamos las rutas en español para evitar errores de tipeo
 object Rutas {
@@ -14,6 +16,8 @@ object Rutas {
     const val AGREGAR_CLASE = "agregar_clase"
 
     const val AGREGAR_TAREA = "agregar_tarea"
+
+    const val ENFOQUE = "enfoque"
 }
 
 @Composable
@@ -36,6 +40,10 @@ fun NavGraph() {
 
         composable(Rutas.AGREGAR_TAREA) {
             AgregarTareaScreen(navController = navController)
+        }
+
+        composable(Rutas.ENFOQUE) {
+            EnfoqueScreen(navController = navController)
         }
     }
 }

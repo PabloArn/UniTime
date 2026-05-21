@@ -109,6 +109,13 @@ fun HorarioScreen(
                 DropdownMenu(expanded = mostrarMenuAgregar, onDismissRequest = { mostrarMenuAgregar = false }) {
                     DropdownMenuItem(text = { Text("📝 Nueva Tarea") }, onClick = { mostrarMenuAgregar = false; navController.navigate(Rutas.AGREGAR_TAREA) })
                     DropdownMenuItem(text = { Text("📚 Nueva Materia") }, onClick = { mostrarMenuAgregar = false; navController.navigate(Rutas.AGREGAR_CLASE) })
+                    DropdownMenuItem(
+                        text = { Text("⏱️ Modo Enfoque") },
+                        onClick = {
+                            mostrarMenuAgregar = false
+                            navController.navigate(Rutas.ENFOQUE)
+                        }
+                    )
                 }
             }
         }
