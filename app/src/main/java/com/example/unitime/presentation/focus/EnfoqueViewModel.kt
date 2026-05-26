@@ -23,21 +23,40 @@ class EnfoqueViewModel @Inject constructor() : ViewModel() {
     var alarmaActivada by mutableStateOf(false)
         private set
 
+    var esperandoPosicion by mutableStateOf(false)
+        private set
+
     private var temporizadorJob: Job? = null
 
-    fun iniciarEnfoque(minutos: Int) {
+    // Escudo de tiempo para estabilizar el celular
+    private var tiempoInmunidad: Long = 0
+
+    fun iniciarPreparacion(minutos: Int) {
         if (minutos <= 0) return
         tiempoRestanteEnSegundos = minutos * 60
-        estaEnfocado = true
+        esperandoPosicion = true
+        estaEnfocado = false
         alarmaActivada = false
+    }
+
+    fun confirmarPosicion() {
+        esperandoPosicion = false
+        estaEnfocado = true
+
+        // NUENA LÍNEA: Apagamos la alarma para que el sonido se detenga
+        // y la UI regrese a la pantalla del cronómetro
+        alarmaActivada = false
+
+        // Le damos 2.5 segundos de inmunidad para que el estudiante saque la mano
+        // y el celular deje de temblar en la mesa antes de "armar" la alarma.
+        tiempoInmunidad = System.currentTimeMillis() + 2500L
 
         temporizadorJob?.cancel()
         temporizadorJob = viewModelScope.launch {
             while (tiempoRestanteEnSegundos > 0 && estaEnfocado) {
-                delay(1000L) // Esperamos 1 segundo
+                delay(1000L)
                 tiempoRestanteEnSegundos--
             }
-            // Si termina el tiempo natural
             if (tiempoRestanteEnSegundos == 0) {
                 detenerEnfoque()
             }
@@ -46,16 +65,17 @@ class EnfoqueViewModel @Inject constructor() : ViewModel() {
 
     fun detenerEnfoque() {
         estaEnfocado = false
+        esperandoPosicion = false
         alarmaActivada = false
         tiempoRestanteEnSegundos = 0
         temporizadorJob?.cancel()
     }
 
-    // Esta función la llamará el SensorManager cuando detecte que levantaron el teléfono
     fun penalizarPorLevantar() {
-        if (estaEnfocado && !alarmaActivada) {
+        // Solo lo castigamos si YA PASÓ el tiempo de inmunidad
+        if (estaEnfocado && !alarmaActivada && System.currentTimeMillis() > tiempoInmunidad) {
             alarmaActivada = true
-            temporizadorJob?.cancel() // Pausamos el tiempo como castigo
+            temporizadorJob?.cancel()
         }
     }
 }
