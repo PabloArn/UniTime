@@ -8,7 +8,8 @@ import com.example.unitime.presentation.schedule.HorarioScreen
 import com.example.unitime.presentation.schedule.AgregarClaseScreen
 import com.example.unitime.presentation.tasks.AgregarTareaScreen
 import com.example.unitime.presentation.focus.EnfoqueScreen
-
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 
 // Centralizamos las rutas en español para evitar errores de tipeo
 object Rutas {
@@ -33,13 +34,36 @@ fun NavGraph() {
             HorarioScreen(navController = navController)
         }
 
-        // Pantalla del formulario para registrar una nueva materia
-        composable(Rutas.AGREGAR_CLASE) {
-            AgregarClaseScreen(navController = navController)
+        composable(
+            route = Rutas.AGREGAR_CLASE + "?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val idStr = backStackEntry.arguments?.getString("id")
+            val id = idStr?.toLongOrNull()
+
+            // Le pasamos el ID a la pantalla. Si es nuevo, el ID será 'null'
+            AgregarClaseScreen(navController = navController, claseId = id)
         }
 
-        composable(Rutas.AGREGAR_TAREA) {
-            AgregarTareaScreen(navController = navController)
+        composable(
+            route = Rutas.AGREGAR_TAREA + "?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val idStr = backStackEntry.arguments?.getString("id")
+            val id = idStr?.toLongOrNull()
+
+            // Le pasamos el ID a la pantalla
+            AgregarTareaScreen(navController = navController, tareaId = id)
         }
 
         composable(Rutas.ENFOQUE) {

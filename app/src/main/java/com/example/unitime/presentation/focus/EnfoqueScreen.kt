@@ -33,7 +33,6 @@ fun EnfoqueScreen(
     val contexto = LocalContext.current
     var inputMinutos by remember { mutableStateOf("25") }
 
-    // 1. Memorizamos el Ringtone fuera del LaunchedEffect para poder detenerlo desde cualquier parte
     val ringtone = remember {
         val uriAlarma = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         RingtoneManager.getRingtone(contexto, uriAlarma)
@@ -49,11 +48,9 @@ fun EnfoqueScreen(
 
                 val z = event.values[2]
 
-                // CASO A: Esperando posición inicial O el usuario está intentando redimirse (alarma activada)
                 if ((viewModel.esperandoPosicion || viewModel.alarmaActivada) && z < -7.0f) {
-                    viewModel.confirmarPosicion() // Esto reinicia el cronómetro y apaga la alarma
+                    viewModel.confirmarPosicion()
                 }
-                // CASO B: Estaba concentrado, no había alarma, y lo levantó (hizo trampa)
                 else if (viewModel.estaEnfocado && !viewModel.alarmaActivada && z > -5.0f) {
                     viewModel.penalizarPorLevantar()
                 }
@@ -65,26 +62,21 @@ fun EnfoqueScreen(
 
         onDispose {
             sensorManager.unregisterListener(sensorListener)
-            // IMPORTANTE: Detenemos la alarma si el usuario se sale de la pantalla
             if (ringtone.isPlaying) ringtone.stop()
         }
     }
 
-    // 2. Controlamos el inicio y fin de la alarma basándonos únicamente en el estado del ViewModel
     LaunchedEffect(viewModel.alarmaActivada) {
         if (viewModel.alarmaActivada) {
             ringtone.play()
-            // Eliminamos el delay(). Ahora sonará infinitamente hasta que el usuario
-            // lo vuelva a poner boca abajo o le dé al botón de "Rendirse".
         } else {
             if (ringtone.isPlaying) ringtone.stop()
         }
     }
 
-    // Lógica de colores del fondo dependiendo del estado
     val colorFondo = when {
         viewModel.alarmaActivada -> MaterialTheme.colorScheme.errorContainer
-        viewModel.esperandoPosicion -> MaterialTheme.colorScheme.secondaryContainer // Un azulito de espera
+        viewModel.esperandoPosicion -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.background
     }
 
@@ -113,7 +105,6 @@ fun EnfoqueScreen(
             verticalArrangement = Arrangement.Center
         ) {
             if (viewModel.esperandoPosicion) {
-                // ESTADO 1.5: Periodo de gracia esperando el acelerómetro
                 Text(
                     text = "Gira el teléfono y ponlo sobre la mesa",
                     fontSize = 28.sp,
@@ -129,7 +120,6 @@ fun EnfoqueScreen(
                 }
             }
             else if (!viewModel.estaEnfocado && !viewModel.alarmaActivada) {
-                // ESTADO 1: Configuración inicial
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
@@ -146,7 +136,6 @@ fun EnfoqueScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
-                    // NUEVO: Ahora llama a iniciarPreparacion en lugar de iniciarEnfoque
                     onClick = { viewModel.iniciarPreparacion(inputMinutos.toIntOrNull() ?: 0) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -154,7 +143,6 @@ fun EnfoqueScreen(
                 }
             }
             else if (viewModel.alarmaActivada) {
-                // ESTADO 2: Trampa detectada
                 Text("¡CONCÉNTRATE!", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Se pausó tu tiempo por mirar el teléfono.")
@@ -167,7 +155,6 @@ fun EnfoqueScreen(
                 }
             }
             else {
-                // ESTADO 3: Enfocado (Cronómetro activo)
                 val minutos = viewModel.tiempoRestanteEnSegundos / 60
                 val segundos = viewModel.tiempoRestanteEnSegundos % 60
                 Text(

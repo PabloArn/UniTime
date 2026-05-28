@@ -18,12 +18,14 @@ import com.example.unitime.data.local.entity.ClaseEntity
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import com.example.unitime.data.local.entity.TareaEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgregarTareaScreen(
     navController: NavController,
-    viewModel: TareaViewModel = hiltViewModel()
+    viewModel: TareaViewModel = hiltViewModel(),
+    tareaId: Long? = null
 ) {
     val contexto = LocalContext.current
     val estadoUi = viewModel.estadoUi
@@ -46,6 +48,18 @@ fun AgregarTareaScreen(
     //CU-10: Seleccionar fecha de entrega (DatePicker)
     val calendario = Calendar.getInstance()
     val formatoFecha = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    LaunchedEffect(tareaId) {
+        if (tareaId != null) {
+            val tareaExistente = viewModel.obtenerTareaPorId(tareaId)
+            if (tareaExistente != null) {
+                // Asigna tus variables de estado aquí (ejemplo:)
+                titulo = tareaExistente.titulo
+                descripcion = tareaExistente.descripcion
+                // etc...
+            }
+        }
+    }
 
     fun mostrarCalendario() {
         val datePickerDialog = DatePickerDialog(
@@ -171,17 +185,36 @@ fun AgregarTareaScreen(
 
             Button(
                 onClick = {
-                    viewModel.guardarTarea(
-                        titulo = titulo,
-                        descripcion = descripcion,
-                        fechaEntrega = fechaSeleccionada,
-                        prioridad = prioridad,
-                        claseId = claseSeleccionada?.id
-                    )
+                    if (tareaId != null) {
+                        // ACTUALIZAR: Creamos el objeto con el ID existente para sobreescribir
+                        val tareaActualizada = TareaEntity(
+                            id = tareaId,
+                            titulo = titulo,
+                            descripcion = descripcion,
+                            fechaEntrega = fechaSeleccionada ?: 0L,
+                            prioridad = prioridad,
+                            claseId = claseSeleccionada?.id,
+                            completada = false // Asumimos que al editar sigue pendiente
+                        )
+                        viewModel.actualizarTarea(tareaActualizada)
+                    } else {
+                        // GUARDAR NUEVA: Dejamos tu código original exactamente como lo tenías
+                        viewModel.guardarTarea(
+                            titulo = titulo,
+                            descripcion = descripcion,
+                            fechaEntrega = fechaSeleccionada ?: 0L,
+                            prioridad = prioridad,
+                            claseId = claseSeleccionada?.id
+                        )
+                    }
+
+                    // Regresa a la pantalla principal
+                    navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar Tarea")
+                // El texto del botón cambia dependiendo de si estamos editando o creando
+                Text(if (tareaId != null) "Actualizar Tarea" else "Guardar Tarea")
             }
         }
     }

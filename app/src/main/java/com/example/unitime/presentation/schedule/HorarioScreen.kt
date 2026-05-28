@@ -22,6 +22,7 @@ import com.example.unitime.presentation.tasks.TareaViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.material.icons.filled.Edit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,8 +168,20 @@ fun HorarioScreen(
                                             Text("📅 Días: ${clase.diasDeLaSemana}", color = MaterialTheme.colorScheme.secondary)
                                         }
                                     }
-                                    IconButton(onClick = { claseParaBorrar = clase }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = MaterialTheme.colorScheme.error)
+
+                                    // 👇 ESTO ES LO NUEVO QUE VAS A PEGAR 👇
+                                    Row {
+                                        // Botón de Editar
+                                        IconButton(onClick = {
+                                            navController.navigate(Rutas.AGREGAR_CLASE + "?id=${clase.id}")
+                                        }) {
+                                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                                        }
+
+                                        // Botón de Borrar (el que ya tenías)
+                                        IconButton(onClick = { claseParaBorrar = clase }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = MaterialTheme.colorScheme.error)
+                                        }
                                     }
                                 }
                             }
@@ -231,8 +244,18 @@ fun HorarioScreen(
 
                                         Text("📅 Entrega: $fechaFormateada", color = MaterialTheme.colorScheme.primary)
                                     }
-                                    IconButton(onClick = { tareaParaBorrar = tarea }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Borrar Tarea", tint = MaterialTheme.colorScheme.error)
+                                    Row {
+                                        // Botón de Editar (El nuevo)
+                                        IconButton(onClick = {
+                                            navController.navigate(Rutas.AGREGAR_TAREA + "?id=${tarea.id}")
+                                        }) {
+                                            Icon(Icons.Default.Edit, contentDescription = "Editar Tarea", tint = MaterialTheme.colorScheme.primary)
+                                        }
+
+                                        // Botón de Borrar (El que ya tenías)
+                                        IconButton(onClick = { tareaParaBorrar = tarea }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Borrar Tarea", tint = MaterialTheme.colorScheme.error)
+                                        }
                                     }
                                 }
                             }

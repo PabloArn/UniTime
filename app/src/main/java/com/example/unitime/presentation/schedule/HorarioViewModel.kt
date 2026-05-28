@@ -22,7 +22,8 @@ class HorarioViewModel @Inject constructor(
     private val repository: ClaseRepository,
     private val guardarClaseUseCase: GuardarClaseUseCase,
     private val validarEmpalmeUseCase: ValidarEmpalmeUseCase,
-    private val eliminarClaseUseCase: EliminarClaseUseCase
+    private val eliminarClaseUseCase: EliminarClaseUseCase,
+    private val claseRepository: ClaseRepository
 ) : ViewModel() {
 
     // Exponemos la lista de clases como un StateFlow para que la UI pueda observarla
@@ -63,6 +64,18 @@ class HorarioViewModel @Inject constructor(
 
     fun reiniciarEstado() {
         estadoUi = HorarioUiState.Inactivo
+    }
+
+    suspend fun obtenerClasePorId(id: Long): ClaseEntity? {
+        // Llamamos a tu función original en inglés
+        return claseRepository.getClaseById(id)
+    }
+
+    fun actualizarClase(clase: ClaseEntity) {
+        viewModelScope.launch {
+            // Llamamos a tu función original en inglés
+            claseRepository.updateClase(clase)
+        }
     }
 }
 

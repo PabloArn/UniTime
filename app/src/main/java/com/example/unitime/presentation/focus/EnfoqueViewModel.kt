@@ -28,7 +28,7 @@ class EnfoqueViewModel @Inject constructor() : ViewModel() {
 
     private var temporizadorJob: Job? = null
 
-    // Escudo de tiempo para estabilizar el celular
+    // El tiempo para poner el celular boca abajo
     private var tiempoInmunidad: Long = 0
 
     fun iniciarPreparacion(minutos: Int) {
@@ -43,12 +43,11 @@ class EnfoqueViewModel @Inject constructor() : ViewModel() {
         esperandoPosicion = false
         estaEnfocado = true
 
-        // NUENA LÍNEA: Apagamos la alarma para que el sonido se detenga
-        // y la UI regrese a la pantalla del cronómetro
+        // Apagamos la alarma para que el sonido se detenga
+
         alarmaActivada = false
 
         // Le damos 2.5 segundos de inmunidad para que el estudiante saque la mano
-        // y el celular deje de temblar en la mesa antes de "armar" la alarma.
         tiempoInmunidad = System.currentTimeMillis() + 2500L
 
         temporizadorJob?.cancel()
@@ -72,7 +71,6 @@ class EnfoqueViewModel @Inject constructor() : ViewModel() {
     }
 
     fun penalizarPorLevantar() {
-        // Solo lo castigamos si YA PASÓ el tiempo de inmunidad
         if (estaEnfocado && !alarmaActivada && System.currentTimeMillis() > tiempoInmunidad) {
             alarmaActivada = true
             temporizadorJob?.cancel()

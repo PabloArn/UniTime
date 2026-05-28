@@ -21,7 +21,8 @@ import java.util.Locale
 @Composable
 fun AgregarClaseScreen(
     navController: NavController,
-    viewModel: HorarioViewModel = hiltViewModel()
+    viewModel: HorarioViewModel = hiltViewModel(),
+    claseId: Long? = null
 ) {
     val contexto = LocalContext.current
     val estadoUi = viewModel.estadoUi
@@ -41,6 +42,23 @@ fun AgregarClaseScreen(
     val horaActual = calendario.get(Calendar.HOUR_OF_DAY)
     val minutoActual = calendario.get(Calendar.MINUTE)
 
+    LaunchedEffect(key1 = claseId) {
+        if (claseId != null) {
+            val claseExistente = viewModel.obtenerClasePorId(claseId)
+            if (claseExistente != null) {
+                nombre = claseExistente.nombre
+                salon = claseExistente.salon
+                edificio = claseExistente.edificio
+                horaInicio = claseExistente.horaInicio
+                horaFin = claseExistente.horaFin
+
+                // Convertimos el texto "Lunes, Martes" de vuelta a una lista para la interfaz
+                if (claseExistente.diasDeLaSemana.isNotBlank()) {
+                    diasSeleccionados = claseExistente.diasDeLaSemana.split(", ").toSet()
+                }
+            }
+        }
+    }
     // Función reutilizable para abrir el reloj
     fun mostrarReloj(alSeleccionar: (String) -> Unit) {
         TimePickerDialog(
@@ -177,21 +195,32 @@ fun AgregarClaseScreen(
                 onClick = {
                     if (nombre.isNotBlank() && horaInicio.isNotBlank() && horaFin.isNotBlank() && diasSeleccionados.isNotEmpty()) {
                         val nuevaClase = ClaseEntity(
+                            id = claseId ?: 0L, // IMPORTANTE: Si es edición usa el ID, si es nueva le pone 0
                             nombre = nombre,
                             edificio = edificio,
                             salon = salon,
                             horaInicio = horaInicio,
                             horaFin = horaFin,
-                            diasDeLaSemana = diasSeleccionados.joinToString(",")
+                            diasDeLaSemana = diasSeleccionados.joinToString(separator = ", ")
                         )
-                        viewModel.guardarClase(nuevaClase)
+
+                        // LA DECISIÓN: ¿Actualizar o Crear?
+                        if (claseId != null) {
+                            viewModel.actualizarClase(nuevaClase)
+                        } else {
+                            viewModel.guardarClase(nuevaClase)
+                        }
+
+                        // Regresa al menú principal después de guardar
+                        navController.popBackStack()
                     } else {
                         Toast.makeText(contexto, "Llena los campos obligatorios y un día", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar Clase")
+                // El texto del botón cambia automáticamente
+                Text(if (claseId != null) "Actualizar Clase" else "Guardar Clase")
             }
         }
     }

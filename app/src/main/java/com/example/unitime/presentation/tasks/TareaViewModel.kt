@@ -106,6 +106,16 @@ class TareaViewModel @Inject constructor(
         calendar.add(Calendar.DAY_OF_YEAR, 1)
         return calendar.timeInMillis
     }
+
+    suspend fun obtenerTareaPorId(id: Long): TareaEntity? {
+        return tareaRepository.getTareaById(id) // Cambia el nombre si en tu repo se llama distinto
+    }
+
+    fun actualizarTarea(tarea: TareaEntity) {
+        viewModelScope.launch {
+            tareaRepository.updateTarea(tarea)
+        }
+    }
 }
 
 sealed class TareaUiState {
