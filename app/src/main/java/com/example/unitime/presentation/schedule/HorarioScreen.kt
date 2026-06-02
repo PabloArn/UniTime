@@ -1,5 +1,8 @@
 package com.example.unitime.presentation.schedule
 
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -7,10 +10,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext // <- IMPORTANTE
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,7 +28,6 @@ import com.example.unitime.presentation.tasks.TareaViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import androidx.compose.material.icons.filled.Edit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +38,8 @@ fun HorarioScreen(
 ) {
     val clases by horarioViewModel.clases.collectAsState(initial = emptyList())
     val tareas by tareaViewModel.tareasPendientes.collectAsState(initial = emptyList())
+
+    val context = LocalContext.current // <- VARIABLE PARA PODER COMPARTIR
 
     var claseParaBorrar by remember { mutableStateOf<ClaseEntity?>(null) }
     var tareaParaBorrar by remember { mutableStateOf<TareaEntity?>(null) }
@@ -98,6 +105,22 @@ fun HorarioScreen(
     }
 
     Scaffold(
+        // 👇 AQUÍ AGREGAMOS LA BARRA SUPERIOR CON EL BOTÓN DE COMPARTIR 👇
+        topBar = {
+            TopAppBar(
+                title = { Text("Mi Horario") },
+                actions = {
+                    IconButton(onClick = {
+                        compartirHorario(context, clasesFiltradas)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Compartir mi día"
+                        )
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             Box {
                 FloatingActionButton(
@@ -169,7 +192,6 @@ fun HorarioScreen(
                                         }
                                     }
 
-                                    // 👇 ESTO ES LO NUEVO QUE VAS A PEGAR 👇
                                     Row {
                                         // Botón de Editar
                                         IconButton(onClick = {
@@ -265,6 +287,40 @@ fun HorarioScreen(
             }
         }
     }
+}
+
+fun compartirHorario(context: Context, clasesDelDia: List<ClaseEntity>) {
+    // Si la lista está vacía, no abrimos el menú y avisamos
+    if (clasesDelDia.isEmpty()) {
+        Toast.makeText(context, "No tienes clases registradas para compartir", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    // Armamos el texto formateado con los datos de tu entidad
+    val textoBuilder = StringBuilder()
+    textoBuilder.append("📚 Mi horario de hoy:\n\n")
+
+    clasesDelDia.forEach { clase ->
+        textoBuilder.append("⏰ ${clase.horaInicio} - ${clase.horaFin} | ${clase.nombre}\n")
+
+        // Validamos que el edificio o salón no estén vacíos para que se vea más limpio
+        if (clase.edificio.isNotBlank() || clase.salon.isNotBlank()) {
+            textoBuilder.append("📍 Edificio: ${clase.edificio} - Salón: ${clase.salon}\n")
+        }
+        textoBuilder.append("\n") // Salto de línea entre clases
+    }
+
+    textoBuilder.append("Generado desde UniTime 🚀")
+
+    // Creamos el Share Intent nativo de Android
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, textoBuilder.toString())
+        type = "text/plain"
+    }
+
+    val shareIntent = Intent.createChooser(sendIntent, "Compartir mi día")
+    context.startActivity(shareIntent)
 }
 
 @Composable

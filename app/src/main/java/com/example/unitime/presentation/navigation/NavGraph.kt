@@ -27,7 +27,8 @@ fun NavGraph() {
 
     NavHost(
         navController = navController,
-        startDestination = Rutas.LOGIN // <-- CAMBIO: Ahora la app arranca en el Login
+        //startDestination = Rutas.LOGIN // <-- CAMBIO: Ahora la app arranca en el Login
+        startDestination = Rutas.HORARIO
     ) {
         // --- NUEVA PANTALLA DE LOGIN ---
         composable(Rutas.LOGIN) {
