@@ -80,4 +80,12 @@ dependencies {
     ksp(libs.hilt.compiler)          // ¡Usando KSP en vez de kapt!
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.work)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Supabase y Autenticación
+    implementation(platform("io.github.jan-tennert.supabase:bom:2.2.3"))
+    implementation("io.github.jan-tennert.supabase:gotrue-kt")
+
+    // Motor de red (Ktor) necesario para Supabase
+    implementation("io.ktor:ktor-client-android:2.3.8")
 }
